@@ -18,7 +18,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#define NIV_SAFE_GPA(expr) do { const auto r = (expr); if (r != GPA_STATUS_OK) throw std::runtime_error ("GPA failure"); } while (0)
+#define NIV_SAFE_GPA(expr) do { const auto r = (expr); if (r != GPA_STATUS_OK) throw Exception (r); } while (0)
 
 namespace Amd {
 namespace {
@@ -32,35 +32,140 @@ T function_pointer_cast (const void* p)
 	return result;
 }
 
-struct LogCallback
+#if AMD_PERF_API_LINUX
+	typedef void*	LibraryHandle;
+#elif AMD_PERF_API_WINDOWS
+	typedef HINSTANCE LibraryHandle;
+#endif
+
+void* LoadFunction (LibraryHandle lib, const char* name)
 {
-	GPA_LoggingCallbackPtrType	;
-	std::function<void (int, const char*)>	callback;
+	void* result = nullptr;
+#if AMD_PERF_API_LINUX
+	result = dlsym (lib, name);
+#elif AMD_PERF_API_WINDOWS
+	result = GetProcAddress (lib, name);
+#else
+#error "Unsupported platform"
+#endif
+
+	if (result == nullptr) {
+		throw std::runtime_error (std::string ("Could not load function: ") + name);
+	}
+
+	return result;
+}
+}
+
+namespace Internal {
+struct ImportTable
+{
+	static void LoadFunctions (LibraryHandle lib, ImportTable& table)
+	{
+		table.initialize 			= function_pointer_cast<GPA_InitializePtrType> (LoadFunction (lib, "GPA_Initialize"));
+		table.destroy 				= function_pointer_cast<GPA_DestroyPtrType> (LoadFunction (lib, "GPA_Destroy"));
+		table.openContext 			= function_pointer_cast<GPA_OpenContextPtrType> (LoadFunction (lib, "GPA_OpenContext"));
+		table.selectContext			= function_pointer_cast<GPA_SelectContextPtrType>(LoadFunction (lib, "GPA_SelectContext"));
+		table.closeContext 			= function_pointer_cast<GPA_CloseContextPtrType> (LoadFunction (lib, "GPA_CloseContext"));
+		table.getNumCounters 		= function_pointer_cast<GPA_GetNumCountersPtrType> (LoadFunction (lib, "GPA_GetNumCounters"));
+		table.getCounterName 		= function_pointer_cast<GPA_GetCounterNamePtrType> (LoadFunction (lib, "GPA_GetCounterName"));
+		table.getCounterDataType 	= function_pointer_cast<GPA_GetCounterDataTypePtrType> (LoadFunction (lib, "GPA_GetCounterDataType"));
+		table.getCounterUsageType	= function_pointer_cast<GPA_GetCounterUsageTypePtrType> (LoadFunction (lib, "GPA_GetCounterUsageType"));
+		table.enableCounter 		= function_pointer_cast<GPA_EnableCounterPtrType> (LoadFunction (lib, "GPA_EnableCounter"));
+		table.disableCounter 		= function_pointer_cast<GPA_DisableCounterPtrType> (LoadFunction (lib, "GPA_DisableCounter"));
+		table.getPassCount 			= function_pointer_cast<GPA_GetPassCountPtrType> (LoadFunction (lib, "GPA_GetPassCount"));
+		table.beginSession 			= function_pointer_cast<GPA_BeginSessionPtrType> (LoadFunction (lib, "GPA_BeginSession"));
+		table.endSession 			= function_pointer_cast<GPA_EndSessionPtrType> (LoadFunction (lib, "GPA_EndSession"));
+		table.beginPass 			= function_pointer_cast<GPA_BeginPassPtrType> (LoadFunction (lib, "GPA_BeginPass"));
+		table.endPass 				= function_pointer_cast<GPA_EndPassPtrType> (LoadFunction (lib, "GPA_EndPass"));
+		table.beginSample 			= function_pointer_cast<GPA_BeginSamplePtrType> (LoadFunction (lib, "GPA_BeginSample"));
+		table.endSample 			= function_pointer_cast<GPA_EndSamplePtrType> (LoadFunction (lib, "GPA_EndSample"));
+		table.isSessionReady 		= function_pointer_cast<GPA_IsSessionReadyPtrType> (LoadFunction (lib, "GPA_IsSessionReady"));
+		table.getSampleUInt64 		= function_pointer_cast<GPA_GetSampleUInt64PtrType> (LoadFunction (lib, "GPA_GetSampleUInt64"));
+		table.getSampleUInt32 		= function_pointer_cast<GPA_GetSampleUInt32PtrType> (LoadFunction (lib, "GPA_GetSampleUInt32"));
+		table.getSampleFloat32 		= function_pointer_cast<GPA_GetSampleFloat32PtrType> (LoadFunction (lib, "GPA_GetSampleFloat32"));
+		table.getSampleFloat64 		= function_pointer_cast<GPA_GetSampleFloat64PtrType> (LoadFunction (lib, "GPA_GetSampleFloat64"));
+		table.getEnabledCount 		= function_pointer_cast<GPA_GetEnabledCountPtrType> (LoadFunction (lib, "GPA_GetEnabledCount"));
+		table.getEnabledIndex 		= function_pointer_cast<GPA_GetEnabledIndexPtrType> (LoadFunction (lib, "GPA_GetEnabledIndex"));
+	}
+
+	GPA_InitializePtrType 			initialize;
+	GPA_DestroyPtrType 				destroy;
+
+	GPA_OpenContextPtrType			openContext;
+	GPA_SelectContextPtrType		selectContext;
+	GPA_CloseContextPtrType			closeContext;
+
+	GPA_GetNumCountersPtrType		getNumCounters;
+	GPA_GetCounterNamePtrType		getCounterName;
+	GPA_GetCounterDataTypePtrType	getCounterDataType;
+	GPA_GetCounterUsageTypePtrType  getCounterUsageType;
+
+	GPA_EnableCounterPtrType		enableCounter;
+	GPA_DisableCounterPtrType		disableCounter;
+
+	GPA_GetPassCountPtrType 		getPassCount;
+
+	GPA_BeginSessionPtrType 		beginSession;
+	GPA_EndSessionPtrType 			endSession;
+
+	GPA_BeginPassPtrType 			beginPass;
+	GPA_EndPassPtrType 				endPass;
+
+	GPA_BeginSamplePtrType 			beginSample;
+	GPA_EndSamplePtrType 			endSample;
+
+	GPA_GetEnabledCountPtrType		getEnabledCount;
+	GPA_GetEnabledIndexPtrType		getEnabledIndex;
+
+	GPA_IsSessionReadyPtrType 		isSessionReady;
+	GPA_GetSampleUInt64PtrType 		getSampleUInt64;
+	GPA_GetSampleUInt32PtrType 		getSampleUInt32;
+	GPA_GetSampleFloat32PtrType 	getSampleFloat32;
+	GPA_GetSampleFloat64PtrType 	getSampleFloat64;
 };
 }
 
 struct PerformanceLibrary::Impl
 {
 	Impl (const ProfileApi::Enum api)
+		: lib_ (nullptr)
 	{
 #if AMD_PERF_API_LINUX
+		switch (api) {
+		case ProfileApi::OpenCL: lib_ = dlopen ("libGPUPerfAPICL.so", RTLD_NOW); break;
+		case ProfileApi::OpenGL: lib_ = dlopen ("libGPUPerfAPIGL.so", RTLD_NOW); break;
+		default:
+			throw std::runtime_error ("Unsupported API");
+		}
+
 #elif AMD_PERF_API_WINDOWS
 		switch (api) {
-		case ProfileApi::Direct3D10: lib_	= LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
-		case ProfileApi::Direct3D11: lib_	= LoadLibraryA ("GPUPerfAPIDX11-x64.dll"); break;
-		case ProfileApi::OpenGL: lib_		= LoadLibraryA ("GPUPerfAPIGL-x64.dll"); break;
-		case ProfileApi::OpenCL: lib_		= LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
+		case ProfileApi::Direct3D10:	lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
+		case ProfileApi::Direct3D11:	lib_ =  LoadLibraryA ("GPUPerfAPIDX11-x64.dll"); break;
+		case ProfileApi::OpenGL:		lib_ = LoadLibraryA ("GPUPerfAPIGL-x64.dll"); break;
+		case ProfileApi::OpenCL:		lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
 		}
+#else
+	#error "Unsupported platform"
 #endif
 
-		InitFunctions ();
+		if (lib_ == nullptr) {
+			throw std::runtime_error ("Failed to initialize performance API library.");
+		}
+		
+		::memset (&imports_, 0, sizeof (imports_));
 
-		initialize_ ();
+		// Get the import functions
+		Internal::ImportTable::LoadFunctions (lib_, imports_);
+		
+		// Initialize the API
+		NIV_SAFE_GPA (imports_.initialize ());
 	}
 
 	~Impl ()
 	{
-		destroy_ ();
+		NIV_SAFE_GPA (imports_.destroy ());
 
 #if AMD_PERF_API_LINUX
 		if (lib_ != nullptr) {
@@ -72,269 +177,291 @@ struct PerformanceLibrary::Impl
 		}
 #endif
 	}
+	
+	Context OpenContext (void* ctx)
+	{
+		return Context (&imports_, ctx);
+	}
 
 private:
-	void InitFunctions ()
-	{
-		initialize_ 			= function_pointer_cast<GPA_InitializePtrType> (LoadFunction ("GPA_Initialize"));
-		destroy_ 				= function_pointer_cast<GPA_DestroyPtrType> (LoadFunction ("GPA_Destroy"));
-		openContext_ 			= function_pointer_cast<GPA_OpenContextPtrType> (LoadFunction ("GPA_OpenContext"));
-		closeContext_ 			= function_pointer_cast<GPA_CloseContextPtrType> (LoadFunction ("GPA_CloseContext"));
-		getNumCounters_ 		= function_pointer_cast<GPA_GetNumCountersPtrType> (LoadFunction ("GPA_GetNumCounters"));
-		getCounterName_ 		= function_pointer_cast<GPA_GetCounterNamePtrType> (LoadFunction ("GPA_GetCounterName"));
-		getCounterDataType_ 	= function_pointer_cast<GPA_GetCounterDataTypePtrType> (LoadFunction ("GPA_GetCounterDataType"));
-		enableCounter_ 			= function_pointer_cast<GPA_EnableCounterPtrType> (LoadFunction ("GPA_EnableCounter"));
-		disableCounter_ 		= function_pointer_cast<GPA_DisableCounterPtrType> (LoadFunction ("GPA_DisableCounter"));
-		getPassCount_ 			= function_pointer_cast<GPA_GetPassCountPtrType> (LoadFunction ("GPA_GetPassCount"));
-		beginSession_ 			= function_pointer_cast<GPA_BeginSessionPtrType> (LoadFunction ("GPA_BeginSession"));
-		endSession_ 			= function_pointer_cast<GPA_EndSessionPtrType> (LoadFunction ("GPA_EndSession"));
-		beginPass_ 				= function_pointer_cast<GPA_BeginPassPtrType> (LoadFunction ("GPA_BeginPass"));
-		endPass_ 				= function_pointer_cast<GPA_EndPassPtrType> (LoadFunction ("GPA_EndPass"));
-		beginSample_ 			= function_pointer_cast<GPA_BeginSamplePtrType> (LoadFunction ("GPA_BeginSample"));
-		endSample_ 				= function_pointer_cast<GPA_EndSamplePtrType> (LoadFunction ("GPA_EndSample"));
-		isSessionReady_ 		= function_pointer_cast<GPA_IsSessionReadyPtrType> (LoadFunction ("GPA_IsSessionReady"));
-		getSampleUInt64_ 		= function_pointer_cast<GPA_GetSampleUInt64PtrType> (LoadFunction ("GPA_GetSampleUInt64"));
-		getSampleUInt32_ 		= function_pointer_cast<GPA_GetSampleUInt32PtrType> (LoadFunction ("GPA_GetSampleUInt32"));
-		getSampleFloat32_ 		= function_pointer_cast<GPA_GetSampleFloat32PtrType> (LoadFunction ("GPA_GetSampleFloat32"));
-		getSampleFloat64_ 		= function_pointer_cast<GPA_GetSampleFloat64PtrType> (LoadFunction ("GPA_GetSampleFloat64"));
-		getEnabledCount_ 		= function_pointer_cast<GPA_GetEnabledCountPtrType> (LoadFunction ("GPA_GetEnabledCount"));
-		getEnabledIndex_ 		= function_pointer_cast<GPA_GetEnabledIndexPtrType> (LoadFunction ("GPA_GetEnabledIndex"));
-		registerLoggingCallback_= function_pointer_cast<GPA_RegisterLoggingCallbackPtrType> (LoadFunction ("GPA_RegisterLoggingCallback"));
+	Internal::ImportTable	imports_;
+	LibraryHandle			lib_;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterSet (Internal::ImportTable* importTable, 
+	const CounterSet::CounterMap& counters)
+: imports_ (importTable)
+, counters_ (counters)
+{
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterSet ()
+: imports_ (nullptr)
+{
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterMap::iterator CounterSet::begin ()
+{
+	return counters_.begin ();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterMap::iterator CounterSet::end ()
+{
+	return counters_.end ();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterMap::const_iterator CounterSet::begin () const
+{
+	return counters_.begin ();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterMap::const_iterator CounterSet::end () const
+{
+	return counters_.end ();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterMap::const_iterator CounterSet::cbegin () const
+{
+	return counters_.cbegin ();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CounterSet::CounterMap::const_iterator CounterSet::cend () const
+{
+	return counters_.cend ();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Counter& CounterSet::operator [] (const std::string& name)
+{
+	return counters_ [name];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int CounterSet::GetRequiredPassCount () const
+{
+	std::uint32_t passCount = 0;
+
+	NIV_SAFE_GPA (imports_->getPassCount (&passCount));
+
+	return static_cast<int> (passCount);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void CounterSet::Enable ()
+{
+	for (const auto& kv : counters_) {
+		NIV_SAFE_GPA (imports_->enableCounter (kv.second.index));
 	}
+}
 
-	void* LoadFunction (const char* name) const
-	{
-#if AMD_PERF_API_LINUX
-		return dlsym (lib_, name);
-#elif AMD_PERF_API_WINDOWS
-		return GetProcAddress (lib_, name);
-#else
-		return nullptr;
-#endif
+////////////////////////////////////////////////////////////////////////////////
+void CounterSet::Disable ()
+{
+	for (const auto& kv : counters_) {
+		NIV_SAFE_GPA (imports_->disableCounter (kv.second.index));
 	}
+}
 
-public:
-	std::vector<CounterInfo>	GetAvailableCounters () const
-	{
-		std::vector<CounterInfo> result;
+////////////////////////////////////////////////////////////////////////////////
+Sample::Sample (Internal::ImportTable* importTable, std::uint32_t id)
+: imports_ (importTable)
+, active_ (false)
+{
+	NIV_SAFE_GPA (imports_->beginSample (id));
+	active_ = true;
+}
 
-		gpa_uint32 availableCounters = 0;
+////////////////////////////////////////////////////////////////////////////////
+Sample::~Sample ()
+{
+	if (active_) {
+		NIV_SAFE_GPA (imports_->endSample ());
+	}
+}
 
-		NIV_SAFE_GPA (getNumCounters_ (&availableCounters));
-		result.reserve (availableCounters);
+////////////////////////////////////////////////////////////////////////////////
+void Sample::End ()
+{
+	NIV_SAFE_GPA (imports_->endSample ());
+	active_ = false;
+}
 
-		for (gpa_uint32 i = 0; i < availableCounters; ++i) {
-			CounterInfo ci;
+////////////////////////////////////////////////////////////////////////////////
+Pass::Pass (Internal::ImportTable* importTable)
+: imports_ (importTable)
+, active_ (false)
+{
+	NIV_SAFE_GPA (imports_->beginPass ());
+	active_ = true;
+}
 
-			const char* name = nullptr;
-			NIV_SAFE_GPA (getCounterName_ (i, &name));
+////////////////////////////////////////////////////////////////////////////////
+Pass::~Pass ()
+{
+	if (active_) {
+		NIV_SAFE_GPA (imports_->endPass ());
+	}
+}
 
-			ci.name = name;
+////////////////////////////////////////////////////////////////////////////////
+void Pass::End ()
+{
+	NIV_SAFE_GPA (imports_->endPass ());
+	active_ = false;
+}
 
-			GPA_Type dataType;
+////////////////////////////////////////////////////////////////////////////////
+Sample Pass::BeginSample ()
+{
+	return BeginSample (0);
+}
 
-			NIV_SAFE_GPA (getCounterDataType_ (i, &dataType));
+////////////////////////////////////////////////////////////////////////////////
+Sample Pass::BeginSample (const std::uint32_t id)
+{
+	return Sample (imports_, id);
+}
 
-			switch (dataType) {
-				case GPA_TYPE_UINT32: ci.type = DataType::uint32; break;
-				case GPA_TYPE_UINT64: ci.type = DataType::uint64; break;
-				case GPA_TYPE_FLOAT32: ci.type = DataType::float32; break;
-				case GPA_TYPE_FLOAT64: ci.type = DataType::float64; break;
+////////////////////////////////////////////////////////////////////////////////
+Session::Session (Internal::ImportTable* importTable)
+: imports_ (importTable)
+, id_ (0)
+, active_ (false)
+{
+	NIV_SAFE_GPA (imports_->beginSession (&id_));
+	active_ = true;
+}
 
-				default:
-					throw std::runtime_error ("Unhandled data type.");
-			}
+////////////////////////////////////////////////////////////////////////////////
+Session::~Session()
+{
+	if (active_) {
+		NIV_SAFE_GPA (imports_->endSession ());
+	}
+}
 
-			ci.index = i;
+////////////////////////////////////////////////////////////////////////////////
+Pass Session::BeginPass ()
+{
+	return Pass (imports_);
+}
 
-			result.push_back (ci);
+////////////////////////////////////////////////////////////////////////////////
+void Session::End ()
+{
+	NIV_SAFE_GPA (imports_->endSession ());
+	active_ = false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool Session::IsReady () const
+{
+	bool ready = false;
+
+	NIV_SAFE_GPA (imports_->isSessionReady (&ready, id_));
+
+	return ready;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+SessionResult Session::GetResult () const
+{
+	return GetResult (true);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+SessionResult Session::GetResult (const bool block) const
+{
+	SessionResult result;
+
+	bool ready = false;
+	while (! ready) {
+		ready = IsReady ();
+
+		if (! block) {
+			continue;
 		}
+	}
 
+	if (! ready) {
 		return result;
 	}
 
-	void EnableCounters (const std::vector<CounterInfo>& counters)
-	{
-		for (const auto& counter : counters) {
-			NIV_SAFE_GPA (enableCounter_ (counter.index));
-		}
-	}
+	gpa_uint32 enabledCounterCount = 0;
+	NIV_SAFE_GPA (imports_->getEnabledCount (&enabledCounterCount));
 
-	void BeginPass ()
-	{
-		NIV_SAFE_GPA (beginPass_ ());
-	}
+	for (gpa_uint32 i = 0; i < enabledCounterCount; ++i) {
+		gpa_uint32 index = 0;
 
-	void EndPass ()
-	{
-		NIV_SAFE_GPA (endPass_ ());
-	}
+		NIV_SAFE_GPA (imports_->getEnabledIndex (i, &index));
+		const char* name = nullptr;
 
-	ProfileSessionHandle BeginProfileSession ()
-	{
-		gpa_uint32 sessionId = 0;
-		NIV_SAFE_GPA (beginSession_ (&sessionId));
+		NIV_SAFE_GPA (imports_->getCounterName (index, &name));
 
-		return sessionId;
-	}
+		GPA_Type type;
+		NIV_SAFE_GPA (imports_->getCounterDataType (index, &type));
 
-	void EndProfileSession ()
-	{
-		NIV_SAFE_GPA (endSession_ ());
-	}
-
-	bool GetProfileSessionResult (const ProfileSessionHandle handle,
-		ProfileResult& result, const bool block) const
-	{
-		bool ready = false;
-		while (! ready) {
-			NIV_SAFE_GPA (isSessionReady_ (&ready, handle));
-
-			if (! block) {
-				continue;
+		switch (type) {
+			case GPA_TYPE_INT32:
+			{
+				gpa_uint32 value;
+				NIV_SAFE_GPA (imports_->getSampleUInt32 (id_, 0, index, &value));
+				result [name] = static_cast<std::int32_t> (value);
+				break;
 			}
-		}
-
-		if (! ready) {
-			return false;
-		}
-
-		gpa_uint32 enabledCounterCount = 0;
-		NIV_SAFE_GPA (getEnabledCount_ (&enabledCounterCount));
-
-		for (gpa_uint32 i = 0; i < enabledCounterCount; ++i) {
-			gpa_uint32 index = 0;
-
-			NIV_SAFE_GPA (getEnabledIndex_ (i, &index));
-			const char* name = nullptr;
-
-			NIV_SAFE_GPA (getCounterName_ (index, &name));
-
-			GPA_Type type;
-			NIV_SAFE_GPA (getCounterDataType_ (index, &type));
-
-			switch (type) {
-				case GPA_TYPE_INT32:
-				{
-					gpa_uint32 value;
-					NIV_SAFE_GPA (getSampleUInt32_ (handle, 0, index, &value));
-					result [name] = static_cast<std::int32_t> (value);
-					break;
-				}
-				case GPA_TYPE_INT64:
-				{
-					gpa_uint64 value;
-					NIV_SAFE_GPA (getSampleUInt64_ (handle, 0, index, &value));
-					result [name] = static_cast<std::int32_t> (value);
-					break;
-				}
-				case GPA_TYPE_UINT32:
-				{
-					gpa_uint32 value;
-					NIV_SAFE_GPA (getSampleUInt32_ (handle, 0, index, &value));
-					result [name] = value;
-					break;
-				}
-				case GPA_TYPE_UINT64:
-				{
-					gpa_uint64 value;
-					NIV_SAFE_GPA (getSampleUInt64_ (handle, 0, index, &value));
-					result [name] = value;
-					break;
-				}
-				case GPA_TYPE_FLOAT32:
-				{
-					gpa_float32 value;
-					NIV_SAFE_GPA (getSampleFloat32_ (handle, 0, index, &value));
-					result [name] = value;
-					break;
-				}
-				case GPA_TYPE_FLOAT64:
-				{
-					gpa_float64 value;
-					NIV_SAFE_GPA (getSampleFloat64_ (handle, 0, index, &value));
-					result [name] = value;
-					break;
-				}
-
-				default:
-					throw std::runtime_error ("Unsupported data type.");
+			case GPA_TYPE_INT64:
+			{
+				gpa_uint64 value;
+				NIV_SAFE_GPA (imports_->getSampleUInt64 (id_, 0, index, &value));
+				result [name] = static_cast<std::int32_t> (value);
+				break;
 			}
+			case GPA_TYPE_UINT32:
+			{
+				gpa_uint32 value;
+				NIV_SAFE_GPA (imports_->getSampleUInt32 (id_, 0, index, &value));
+				result [name] = value;
+				break;
+			}
+			case GPA_TYPE_UINT64:
+			{
+				gpa_uint64 value;
+				NIV_SAFE_GPA (imports_->getSampleUInt64 (id_, 0, index, &value));
+				result [name] = value;
+				break;
+			}
+			case GPA_TYPE_FLOAT32:
+			{
+				gpa_float32 value;
+				NIV_SAFE_GPA (imports_->getSampleFloat32 (id_, 0, index, &value));
+				result [name] = value;
+				break;
+			}
+			case GPA_TYPE_FLOAT64:
+			{
+				gpa_float64 value;
+				NIV_SAFE_GPA (imports_->getSampleFloat64 (id_, 0, index, &value));
+				result [name] = value;
+				break;
+			}
+
+			default:
+				throw std::runtime_error ("Unsupported data type.");
 		}
-
-		return true;
 	}
 
-	void BeginSampling ()
-	{
-		NIV_SAFE_GPA (beginSample_ (0));
-	}
-
-	void EndSampling ()
-	{
-		NIV_SAFE_GPA (endSample_ ());
-	}
-
-	void OpenContext (void* ctx)
-	{
-		NIV_SAFE_GPA (openContext_ (ctx));
-	}
-
-	void CloseContext ()
-	{
-		NIV_SAFE_GPA (closeContext_ ());
-	}
-
-	std::uint32_t GetRequiredPassCount () const
-	{
-		gpa_uint32 numPasses;
-		NIV_SAFE_GPA (getPassCount_ (&numPasses));
-
-		return numPasses;
-	}
-
-private:
-#if AMD_PERF_API_LINUX
-	void*	lib_;
-#elif AMD_PERF_API_WINDOWS
-	HINSTANCE lib_;
-#endif
-
-	GPA_InitializePtrType 			initialize_;
-	GPA_DestroyPtrType 				destroy_;
-
-	GPA_OpenContextPtrType			openContext_;
-	GPA_CloseContextPtrType			closeContext_;
-
-	GPA_GetNumCountersPtrType		getNumCounters_;
-	GPA_GetCounterNamePtrType		getCounterName_;
-	GPA_GetCounterDataTypePtrType	getCounterDataType_;
-
-	GPA_EnableCounterPtrType		enableCounter_;
-	GPA_DisableCounterPtrType		disableCounter_;
-
-	GPA_GetPassCountPtrType 		getPassCount_;
-
-	GPA_BeginSessionPtrType 		beginSession_;
-	GPA_EndSessionPtrType 			endSession_;
-
-	GPA_BeginPassPtrType 			beginPass_;
-	GPA_EndPassPtrType 				endPass_;
-
-	GPA_BeginSamplePtrType 			beginSample_;
-	GPA_EndSamplePtrType 			endSample_;
-
-	GPA_GetEnabledCountPtrType		getEnabledCount_;
-	GPA_GetEnabledIndexPtrType		getEnabledIndex_;
-
-	GPA_IsSessionReadyPtrType 		isSessionReady_;
-	GPA_GetSampleUInt64PtrType 		getSampleUInt64_;
-	GPA_GetSampleUInt32PtrType 		getSampleUInt32_;
-	GPA_GetSampleFloat32PtrType 	getSampleFloat32_;
-	GPA_GetSampleFloat64PtrType 	getSampleFloat64_;
-
-	GPA_RegisterLoggingCallbackPtrType	registerLoggingCallback_;
-};
+	return result;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 PerformanceLibrary::PerformanceLibrary (const ProfileApi::Enum targetApi)
@@ -349,75 +476,106 @@ PerformanceLibrary::~PerformanceLibrary ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int PerformanceLibrary::GetRequiredPassCount ()
+Context PerformanceLibrary::OpenContext (void* ctx)
 {
-	return static_cast<int> (impl_->GetRequiredPassCount ());
+	return impl_->OpenContext (ctx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<CounterInfo>	PerformanceLibrary::GetAvailableCounters () const
+Context::Context (Internal::ImportTable* imports, void* ctx)
+: imports_ (imports)
+, context_ (ctx)
 {
-	return impl_->GetAvailableCounters ();
+	NIV_SAFE_GPA (imports_->openContext (ctx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::EnableCounters (const std::vector<CounterInfo>& counters)
+Context::Context ()
+: imports_ (nullptr)
+, context_ (nullptr)
 {
-	impl_->EnableCounters (counters);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::BeginPass ()
+Context::~Context()
 {
-	impl_->BeginPass ();
+	if (context_) {
+		Close ();
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::EndPass ()
+CounterSet Context::GetAvailableCounters () const
 {
-	impl_->EndPass ();
+	CounterSet::CounterMap result;
+	
+	gpa_uint32 availableCounters = 0;
+	NIV_SAFE_GPA (imports_->getNumCounters (&availableCounters));
+
+	for (gpa_uint32 i = 0; i < availableCounters; ++i) {
+		Counter counter;
+
+		const char* name = nullptr;
+		NIV_SAFE_GPA (imports_->getCounterName (i, &name));
+
+		GPA_Type dataType;
+
+		NIV_SAFE_GPA (imports_->getCounterDataType (i, &dataType));
+
+		switch (dataType) {
+			case GPA_TYPE_UINT32:	counter.type = DataType::uint32; break;
+			case GPA_TYPE_UINT64:	counter.type = DataType::uint64; break;
+			case GPA_TYPE_FLOAT32:	counter.type = DataType::float32; break;
+			case GPA_TYPE_FLOAT64:	counter.type = DataType::float64; break;
+			case GPA_TYPE_INT32:	counter.type = DataType::int32; break;
+			case GPA_TYPE_INT64:	counter.type = DataType::int64; break;
+
+			default:
+				throw std::runtime_error ("Unknown data type.");
+		}
+
+		GPA_Usage_Type usageType;
+
+		NIV_SAFE_GPA (imports_->getCounterUsageType (i, &usageType));
+
+		switch (usageType) {
+		case GPA_USAGE_TYPE_RATIO:			counter.usage = UsageType::Ratio; break;
+		case GPA_USAGE_TYPE_PERCENTAGE:		counter.usage = UsageType::Percentage; break;
+		case GPA_USAGE_TYPE_CYCLES:			counter.usage = UsageType::Cycles; break;
+		case GPA_USAGE_TYPE_MILLISECONDS:	counter.usage = UsageType::Milliseconds; break;
+		case GPA_USAGE_TYPE_BYTES:			counter.usage = UsageType::Bytes; break;
+		case GPA_USAGE_TYPE_ITEMS:			counter.usage = UsageType::Items; break;
+		case GPA_USAGE_TYPE_KILOBYTES:		counter.usage = UsageType::Kilobytes; break;
+		
+		default:
+			throw std::runtime_error ("Unknown usage type.");
+		}
+
+		counter.index = i;
+
+		result [name] = counter;
+	}
+	
+	return CounterSet (imports_, result);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void Context::Select ()
+{
+	NIV_SAFE_GPA (imports_->selectContext (context_));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-PerformanceLibrary::ProfileSessionHandle PerformanceLibrary::BeginProfileSession ()
+void Context::Close ()
 {
-	return impl_->BeginProfileSession ();
+	NIV_SAFE_GPA (imports_->closeContext ());
+	context_ = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::EndProfileSession ()
+Session Context::BeginSession()
 {
-	impl_->EndProfileSession ();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-bool PerformanceLibrary::GetProfileSessionResult (const ProfileSessionHandle handle,
-	ProfileResult& result, const bool block) const
-{
-	return impl_->GetProfileSessionResult (handle, result, block);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::BeginSampling ()
-{
-	impl_->BeginSampling ();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::EndSampling ()
-{
-	impl_->EndSampling ();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::OpenContext (void* ctx)
-{
-	impl_->OpenContext (ctx);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void PerformanceLibrary::CloseContext ()
-{
-	impl_->CloseContext ();
+	return Session (imports_);
 }
 }

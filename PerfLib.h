@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <map>
 #include <vector>
-#include <functional>
 
 namespace Amd {
 struct DataType
@@ -23,6 +22,20 @@ struct DataType
 	};
 };
 
+struct UsageType
+{
+	enum Enum
+	{
+		Ratio,         ///< Result is a ratio of two different values or types
+		Percentage,    ///< Result is a percentage, typically within [0,100] range, but may be higher for certain counters
+		Cycles,        ///< Result is in clock cycles
+		Milliseconds,  ///< Result is in milliseconds
+		Bytes,         ///< Result is in bytes
+		Items,         ///< Result is a count of items or objects (ie, vertices, triangles, threads, pixels, texels, etc)
+		Kilobytes
+	};
+};
+
 struct ProfileApi
 {
 	enum Enum
@@ -34,14 +47,127 @@ struct ProfileApi
 	};
 };
 
-typedef std::map<std::string, boost::variant<float, double,
-	std::uint32_t, std::uint64_t, std::int32_t, std::int64_t>> ProfileResult;
+typedef std::map<std::string,
+	boost::variant<
+		float, double,
+		std::uint32_t, std::uint64_t,
+		std::int32_t, std::int64_t>
+	> SessionResult;
 
-struct CounterInfo
+struct Counter
 {
-	std::string 	name;
 	int				index;
 	DataType::Enum 	type;
+	UsageType::Enum usage;
+};
+
+class Exception : public std::runtime_error
+{
+public:
+	Exception (const int errorCode);
+
+	int GetErrorCode ();
+
+private:
+	int errorCode_;
+};
+
+namespace Internal {
+struct ImportTable;
+}
+
+class CounterSet
+{
+public:
+	typedef std::map<std::string, Counter> CounterMap;
+
+	CounterSet (Internal::ImportTable* importTable, const CounterMap& counters);
+	CounterSet ();
+
+	CounterMap::iterator begin ();
+	CounterMap::iterator end ();
+	CounterMap::const_iterator begin () const;
+	CounterMap::const_iterator end () const;
+	CounterMap::const_iterator cbegin () const;
+	CounterMap::const_iterator cend () const;
+
+	Counter& operator [] (const std::string& name);
+
+	int GetRequiredPassCount () const;
+
+	void Enable ();
+	void Disable ();
+
+private:
+	Internal::ImportTable*			imports_;
+	std::map<std::string, Counter>	counters_;
+};
+
+class Sample
+{
+public:
+	Sample (Internal::ImportTable* importTable, std::uint32_t id);
+	~Sample ();
+
+	void End ();
+
+private:
+	Internal::ImportTable*	imports_;
+	bool					active_;
+};
+
+class Pass
+{
+public:
+	Pass (Internal::ImportTable* importTable);
+	~Pass ();
+
+	void End ();
+
+	Sample BeginSample ();
+	Sample BeginSample (const std::uint32_t id);
+
+private:
+	Internal::ImportTable* 	imports_;
+	bool					active_;
+};
+
+class Session
+{
+public:
+	Session (Internal::ImportTable* importTable);
+	~Session ();
+
+	Pass BeginPass ();
+	void End ();
+
+	bool IsReady () const;
+	SessionResult GetResult (const bool block) const;
+	SessionResult GetResult () const;
+
+private:
+	Internal::ImportTable*	imports_;
+	std::uint32_t			id_;
+	bool					active_;
+};
+
+class Context
+{
+public:
+	Context (Internal::ImportTable* imports, void* ctx);
+	Context ();
+	~Context ();
+
+	void Select ();
+	void Close ();
+
+	CounterSet	GetAvailableCounters () const;
+
+	Session BeginSession ();
+
+private:
+	Internal::ImportTable*	imports_;
+	void*					context_;
 };
 
 class PerformanceLibrary : public boost::noncopyable
@@ -50,30 +176,8 @@ public:
 	PerformanceLibrary (const ProfileApi::Enum targetApi);
 	~PerformanceLibrary ();
 
-	typedef std::uint32_t ProfileSessionHandle;
+	Context	OpenContext (void* ctx);
 
-	int GetRequiredPassCount ();
-
-	std::vector<CounterInfo>	GetAvailableCounters () const;
-	void EnableCounters (const std::vector<CounterInfo>& counters);
-
-	void BeginPass ();
-	void EndPass ();
-
-	ProfileSessionHandle BeginProfileSession ();
-	void EndProfileSession ();
-
-	bool GetProfileSessionResult (const ProfileSessionHandle handle,
-		ProfileResult& result, const bool block) const;
-
-	void BeginSampling ();
-	void EndSampling ();
-
-	void OpenContext (void* ctx);
-	void CloseContext ();
-
-	void RegisterLoggingCallback (std::function<void (const int messageType,
-		const char* message) callback);
 private:
 	struct Impl;
 	Impl*	impl_;
