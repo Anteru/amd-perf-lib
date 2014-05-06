@@ -319,6 +319,24 @@ Sample::~Sample ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+Sample::Sample (Sample&& other)
+: imports_ (other.imports_)
+, active_ (other.active_)
+{
+	other.active_ = false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Sample& Sample::operator= (Sample&& other)
+{
+	imports_ 		= other.imports_;
+	active_ 		= other.active_;
+	other.active_ 	= false;
+	
+	return *this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void Sample::End ()
 {
 	NIV_SAFE_GPA (imports_->endSample ());
@@ -340,6 +358,24 @@ Pass::~Pass ()
 	if (active_) {
 		NIV_SAFE_GPA (imports_->endPass ());
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Pass::Pass (Pass&& other)
+: imports_ (other.imports_)
+, active_ (other.active_)
+{
+	other.active_ = false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Pass& Pass::operator= (Pass&& other)
+{
+	imports_ = other.imports_;
+	active_ = other.active_;
+	other.active_ = false;
+	
+	return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,6 +413,26 @@ Session::~Session()
 	if (active_) {
 		NIV_SAFE_GPA (imports_->endSession ());
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Session::Session (Session&& other)
+: imports_ (other.imports_)
+, id_ (other.id_)
+, active_ (other.active_)
+{
+	other.active_ = false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Session& Session::operator= (Session&& other)
+{
+	imports_ 		= other.imports_;
+	id_ 			= other.id_;
+	active_ 		= other.active_;
+	other.active_ 	= false;
+	
+	return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

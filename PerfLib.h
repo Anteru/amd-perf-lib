@@ -105,9 +105,12 @@ private:
 	std::map<std::string, Counter>	counters_;
 };
 
-class Sample
+class Sample : public boost::noncopyable
 {
 public:
+	Sample (Sample&& other);
+	Sample& operator= (Sample&& other);
+	
 	Sample (Internal::ImportTable* importTable, std::uint32_t id);
 	~Sample ();
 
@@ -121,6 +124,9 @@ private:
 class Pass : public boost::noncopyable
 {
 public:
+	Pass (Pass&& other);
+	Pass& operator= (Pass&& other);
+	
 	Pass (Internal::ImportTable* importTable);
 	~Pass ();
 
@@ -137,6 +143,9 @@ private:
 class Session : public boost::noncopyable
 {
 public:
+	Session (Session&& other);
+	Session& operator=(Session&& other);
+	
 	Session (Internal::ImportTable* importTable);
 	~Session ();
 
