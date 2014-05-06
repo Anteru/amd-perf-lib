@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <cstdlib>
-#include <vector>
+#include <set>
 
 #include <iostream>
 #include <stdexcept>
@@ -55,6 +55,19 @@ void* LoadFunction (LibraryHandle lib, const char* name)
 
 	return result;
 }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+Exception::Exception (const int error)
+: std::runtime_error ("GPA error: " + std::to_string (error))
+, errorCode_ (error)
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+int Exception::GetErrorCode () const
+{
+	return errorCode_;
 }
 
 namespace Internal {
@@ -129,7 +142,7 @@ struct ImportTable
 struct PerformanceLibrary::Impl
 {
 	Impl (const ProfileApi::Enum api)
-		: lib_ (nullptr)
+	: lib_ (nullptr)
 	{
 #if AMD_PERF_API_LINUX
 		switch (api) {
@@ -141,10 +154,10 @@ struct PerformanceLibrary::Impl
 
 #elif AMD_PERF_API_WINDOWS
 		switch (api) {
-		case ProfileApi::Direct3D10:	lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
-		case ProfileApi::Direct3D11:	lib_ =  LoadLibraryA ("GPUPerfAPIDX11-x64.dll"); break;
-		case ProfileApi::OpenGL:		lib_ = LoadLibraryA ("GPUPerfAPIGL-x64.dll"); break;
-		case ProfileApi::OpenCL:		lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
+		case ProfileApi::Direct3D10: lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
+		case ProfileApi::Direct3D11: lib_ = LoadLibraryA ("GPUPerfAPIDX11-x64.dll"); break;
+		case ProfileApi::OpenGL:	 lib_ = LoadLibraryA ("GPUPerfAPIGL-x64.dll"); break;
+		case ProfileApi::OpenCL:	 lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
 		}
 #else
 	#error "Unsupported platform"
@@ -273,6 +286,22 @@ void CounterSet::Disable ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void CounterSet::Keep (const std::vector<std::string>& counters)
+{
+	std::set<std::string> counterSet (counters.begin (), counters.end ());
+	
+	auto it = counters_.begin (), end = counters_.end ();
+
+	while (it != end) {
+		if (counterSet.find (it->first) == counterSet.end ()) {
+			it = counters_.erase (it);
+		} else {
+			++it;
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 Sample::Sample (Internal::ImportTable* importTable, std::uint32_t id)
 : imports_ (importTable)
 , active_ (false)
@@ -384,19 +413,20 @@ SessionResult Session::GetResult (const bool block) const
 {
 	SessionResult result;
 
-	bool ready = false;
-	while (! ready) {
-		ready = IsReady ();
+	bool ready = IsReady ();
 
-		if (! block) {
-			continue;
-		}
-	}
-
-	if (! ready) {
+	if (!block && !ready) {
+		// Not ready and we don't block to get results, return empty result
 		return result;
-	}
-
+	} else if (block && !ready) {
+		// Not ready and we block to get results, loop until ready
+		while (!IsReady ()) { 
+			/* Wait */ 
+		}
+		
+		// Will be ready at this point
+	} // else, ready, go ahead and fetch results
+	
 	gpa_uint32 enabledCounterCount = 0;
 	NIV_SAFE_GPA (imports_->getEnabledCount (&enabledCounterCount));
 
@@ -502,6 +532,24 @@ Context::~Context()
 	if (context_) {
 		Close ();
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Context::Context (Context&& other)
+: imports_ (other.imports_)
+, context_ (other.context_)
+{
+	other.context_ = nullptr;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Context& Context::operator= (Context&& other)
+{
+	imports_ = other.imports_;
+	context_ = other.context_;
+	other.context_ = nullptr;
+
+	return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

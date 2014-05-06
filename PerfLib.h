@@ -66,7 +66,7 @@ class Exception : public std::runtime_error
 public:
 	Exception (const int errorCode);
 
-	int GetErrorCode ();
+	int GetErrorCode () const;
 
 private:
 	int errorCode_;
@@ -93,6 +93,8 @@ public:
 
 	Counter& operator [] (const std::string& name);
 
+	void Keep (const std::vector<std::string>& counters);
+
 	int GetRequiredPassCount () const;
 
 	void Enable ();
@@ -116,7 +118,7 @@ private:
 	bool					active_;
 };
 
-class Pass
+class Pass : public boost::noncopyable
 {
 public:
 	Pass (Internal::ImportTable* importTable);
@@ -132,7 +134,7 @@ private:
 	bool					active_;
 };
 
-class Session
+class Session : public boost::noncopyable
 {
 public:
 	Session (Internal::ImportTable* importTable);
@@ -151,12 +153,15 @@ private:
 	bool					active_;
 };
 
-class Context
+class Context : public boost::noncopyable
 {
 public:
 	Context (Internal::ImportTable* imports, void* ctx);
 	Context ();
 	~Context ();
+
+	Context (Context&& other);
+	Context& operator= (Context&& other);
 
 	void Select ();
 	void Close ();
