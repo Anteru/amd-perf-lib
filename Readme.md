@@ -13,9 +13,9 @@ Getting started
 
 The project requires Visual Studio 2012 or later, or GCC 4.8/Clang 3.4. Most likely, older GCC/Clang versions will work as well, but haven't been tested. When using GCC/Clang, please enable ``-std=c++11``.
 
-There is a basic ``CMakeLists.txt`` file to help you get started. You have to define the CMake varaibles ``AMD_PERF_LIBRARY_OS_WINDOWS`` or ``AMD_PERF_LIBRARY_OS_LINUX`` while configuring. Alternatively, you can simply compile ``PerfLib.cpp`` and ``#define`` ``AMD_PERF_API_WINDOWS=1`` or ``AMD_PERF_API_LINUX=1`` using the C++ preprocessor.
+There is a basic ``CMakeLists.txt`` file to help you get started. You have to define the CMake variables ``AMD_PERF_LIBRARY_OS_WINDOWS`` or ``AMD_PERF_LIBRARY_OS_LINUX`` while configuring. Alternatively, you can simply compile ``PerfLib.cpp`` and ``#define`` ``AMD_PERF_API_WINDOWS=1`` or ``AMD_PERF_API_LINUX=1`` using the C++ preprocessor.
 
-It has been tested on Windows 7, with a HD 7970; Windows 8.1 with a R9 290X and should also work on Linux.
+It has been tested on Windows 7, with a HD 7970; on Windows 8.1 with a R9 290X and should also work on Linux.
 
 Notes
 -----
