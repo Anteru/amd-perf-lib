@@ -84,14 +84,12 @@ public:
 	CounterSet (Internal::ImportTable* importTable, const CounterMap& counters);
 	CounterSet ();
 
-	CounterMap::iterator begin ();
-	CounterMap::iterator end ();
 	CounterMap::const_iterator begin () const;
 	CounterMap::const_iterator end () const;
 	CounterMap::const_iterator cbegin () const;
 	CounterMap::const_iterator cend () const;
 
-	Counter& operator [] (const std::string& name);
+	const Counter& operator [] (const std::string& name) const;
 
 	void Keep (const std::vector<std::string>& counters);
 

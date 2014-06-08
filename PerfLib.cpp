@@ -218,18 +218,6 @@ CounterSet::CounterSet ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CounterSet::CounterMap::iterator CounterSet::begin ()
-{
-	return counters_.begin ();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-CounterSet::CounterMap::iterator CounterSet::end ()
-{
-	return counters_.end ();
-}
-
-////////////////////////////////////////////////////////////////////////////////
 CounterSet::CounterMap::const_iterator CounterSet::begin () const
 {
 	return counters_.begin ();
@@ -254,9 +242,15 @@ CounterSet::CounterMap::const_iterator CounterSet::cend () const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-Counter& CounterSet::operator [] (const std::string& name)
+const Counter& CounterSet::operator [] (const std::string& name) const
 {
-	return counters_ [name];
+	auto it = counters_.find (name);
+
+	if (it == counters_.end ()) {
+		throw std::runtime_error ("Invalid key");
+	} else {
+		return it->second;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
