@@ -31,28 +31,28 @@ typedef gpa_uint8 bool;
 #endif
 #endif // _WIN32
 
-#ifdef _LINUX 
+#ifdef _LINUX
 
 #ifdef GPALIB_DECL
 #else
 #  ifdef __cplusplus
-#    define GPALIB_DECL extern "C" 
-#  else 
-#    define GPALIB_DECL 
+#    define GPALIB_DECL extern "C"
+#  else
+#    define GPALIB_DECL
 #  endif // _cplusplus
 #endif
 
 typedef char    gpa_int8;
 typedef short   gpa_int16;
 typedef int     gpa_int32;
-typedef long int gpa_int64;
+typedef long long gpa_int64;
 typedef unsigned int UINT;
 typedef float   gpa_float32;
 typedef double  gpa_float64;
 typedef unsigned char    gpa_uint8;
 typedef unsigned short   gpa_uint16;
 typedef unsigned int     gpa_uint32;
-typedef unsigned long int gpa_uint64;
+typedef unsigned long long gpa_uint64;
 #ifndef __cplusplus
 typedef gpa_uint8 bool;
 #endif
@@ -62,7 +62,7 @@ typedef gpa_uint8 bool;
 #define UNREFERENCED_PARAMETER(x)
 #define UNREFERECED_VAR(x)
 
-#define _strcmpi(a, b) strcasecmp(a, b)  
+#define _strcmpi(a, b) strcasecmp(a, b)
 
 // for now, just use non secure version for Linux
 #define strcpy_s(dst, ndst, src) strcpy(dst, src)
@@ -85,77 +85,77 @@ typedef gpa_uint8 bool;
 /// Status enumerations
 typedef enum
 {
-   GPA_STATUS_OK = 0,
-   GPA_STATUS_ERROR_NULL_POINTER,
-   GPA_STATUS_ERROR_COUNTERS_NOT_OPEN,
-   GPA_STATUS_ERROR_COUNTERS_ALREADY_OPEN,
-   GPA_STATUS_ERROR_INDEX_OUT_OF_RANGE,
-   GPA_STATUS_ERROR_NOT_FOUND,
-   GPA_STATUS_ERROR_ALREADY_ENABLED,
-   GPA_STATUS_ERROR_NO_COUNTERS_ENABLED,
-   GPA_STATUS_ERROR_NOT_ENABLED,
-   GPA_STATUS_ERROR_SAMPLING_NOT_STARTED,
-   GPA_STATUS_ERROR_SAMPLING_ALREADY_STARTED,
-   GPA_STATUS_ERROR_SAMPLING_NOT_ENDED,
-   GPA_STATUS_ERROR_NOT_ENOUGH_PASSES,
-   GPA_STATUS_ERROR_PASS_NOT_ENDED,
-   GPA_STATUS_ERROR_PASS_NOT_STARTED,
-   GPA_STATUS_ERROR_PASS_ALREADY_STARTED,
-   GPA_STATUS_ERROR_SAMPLE_NOT_STARTED,
-   GPA_STATUS_ERROR_SAMPLE_ALREADY_STARTED,
-   GPA_STATUS_ERROR_SAMPLE_NOT_ENDED,
-   GPA_STATUS_ERROR_CANNOT_CHANGE_COUNTERS_WHEN_SAMPLING,
-   GPA_STATUS_ERROR_SESSION_NOT_FOUND,
-   GPA_STATUS_ERROR_SAMPLE_NOT_FOUND,
-   GPA_STATUS_ERROR_SAMPLE_NOT_FOUND_IN_ALL_PASSES,
-   GPA_STATUS_ERROR_COUNTER_NOT_OF_SPECIFIED_TYPE,
-   GPA_STATUS_ERROR_READING_COUNTER_RESULT,
-   GPA_STATUS_ERROR_VARIABLE_NUMBER_OF_SAMPLES_IN_PASSES,
-   GPA_STATUS_ERROR_FAILED,
-   GPA_STATUS_ERROR_HARDWARE_NOT_SUPPORTED,
+    GPA_STATUS_OK = 0,
+    GPA_STATUS_ERROR_NULL_POINTER,
+    GPA_STATUS_ERROR_COUNTERS_NOT_OPEN,
+    GPA_STATUS_ERROR_COUNTERS_ALREADY_OPEN,
+    GPA_STATUS_ERROR_INDEX_OUT_OF_RANGE,
+    GPA_STATUS_ERROR_NOT_FOUND,
+    GPA_STATUS_ERROR_ALREADY_ENABLED,
+    GPA_STATUS_ERROR_NO_COUNTERS_ENABLED,
+    GPA_STATUS_ERROR_NOT_ENABLED,
+    GPA_STATUS_ERROR_SAMPLING_NOT_STARTED,
+    GPA_STATUS_ERROR_SAMPLING_ALREADY_STARTED,
+    GPA_STATUS_ERROR_SAMPLING_NOT_ENDED,
+    GPA_STATUS_ERROR_NOT_ENOUGH_PASSES,
+    GPA_STATUS_ERROR_PASS_NOT_ENDED,
+    GPA_STATUS_ERROR_PASS_NOT_STARTED,
+    GPA_STATUS_ERROR_PASS_ALREADY_STARTED,
+    GPA_STATUS_ERROR_SAMPLE_NOT_STARTED,
+    GPA_STATUS_ERROR_SAMPLE_ALREADY_STARTED,
+    GPA_STATUS_ERROR_SAMPLE_NOT_ENDED,
+    GPA_STATUS_ERROR_CANNOT_CHANGE_COUNTERS_WHEN_SAMPLING,
+    GPA_STATUS_ERROR_SESSION_NOT_FOUND,
+    GPA_STATUS_ERROR_SAMPLE_NOT_FOUND,
+    GPA_STATUS_ERROR_SAMPLE_NOT_FOUND_IN_ALL_PASSES,
+    GPA_STATUS_ERROR_COUNTER_NOT_OF_SPECIFIED_TYPE,
+    GPA_STATUS_ERROR_READING_COUNTER_RESULT,
+    GPA_STATUS_ERROR_VARIABLE_NUMBER_OF_SAMPLES_IN_PASSES,
+    GPA_STATUS_ERROR_FAILED,
+    GPA_STATUS_ERROR_HARDWARE_NOT_SUPPORTED,
 
-   // Bug FB 9349: This error code is for a work around to a gl driver bug where it crashes on SI h/w for 12.9 catalyst
-   GPA_STATUS_ERROR_CATALYST_VER_UNSUPPORTED_SI,
+    // Bug FB 9349: This error code is for a work around to a gl driver bug where it crashes on SI h/w for 12.9 catalyst
+    GPA_STATUS_ERROR_CATALYST_VER_UNSUPPORTED_SI,
 } GPA_Status;
 
 
 /// Value type definitions
 typedef enum
 {
-   GPA_TYPE_FLOAT32,             ///< Result will be a 32-bit float
-   GPA_TYPE_FLOAT64,             ///< Result will be a 64-bit float
-   GPA_TYPE_UINT32,              ///< Result will be a 32-bit unsigned int
-   GPA_TYPE_UINT64,              ///< Result will be a 64-bit unsigned int
-   GPA_TYPE_INT32,               ///< Result will be a 32-bit int
-   GPA_TYPE_INT64,               ///< Result will be a 64-bit int
-   GPA_TYPE__LAST                ///< Marker indicating last element
+    GPA_TYPE_FLOAT32,             ///< Result will be a 32-bit float
+    GPA_TYPE_FLOAT64,             ///< Result will be a 64-bit float
+    GPA_TYPE_UINT32,              ///< Result will be a 32-bit unsigned int
+    GPA_TYPE_UINT64,              ///< Result will be a 64-bit unsigned int
+    GPA_TYPE_INT32,               ///< Result will be a 32-bit int
+    GPA_TYPE_INT64,               ///< Result will be a 64-bit int
+    GPA_TYPE__LAST                ///< Marker indicating last element
 } GPA_Type;
 
 /// Result usage type definitions
 typedef enum
 {
-   GPA_USAGE_TYPE_RATIO,         ///< Result is a ratio of two different values or types
-   GPA_USAGE_TYPE_PERCENTAGE,    ///< Result is a percentage, typically within [0,100] range, but may be higher for certain counters
-   GPA_USAGE_TYPE_CYCLES,        ///< Result is in clock cycles
-   GPA_USAGE_TYPE_MILLISECONDS,  ///< Result is in milliseconds
-   GPA_USAGE_TYPE_BYTES,         ///< Result is in bytes
-   GPA_USAGE_TYPE_ITEMS,         ///< Result is a count of items or objects (ie, vertices, triangles, threads, pixels, texels, etc)
-   GPA_USAGE_TYPE_KILOBYTES,     ///< Result is in kilobytes
-   GPA_USAGE_TYPE__LAST          ///< Marker indicating last element
+    GPA_USAGE_TYPE_RATIO,         ///< Result is a ratio of two different values or types
+    GPA_USAGE_TYPE_PERCENTAGE,    ///< Result is a percentage, typically within [0,100] range, but may be higher for certain counters
+    GPA_USAGE_TYPE_CYCLES,        ///< Result is in clock cycles
+    GPA_USAGE_TYPE_MILLISECONDS,  ///< Result is in milliseconds
+    GPA_USAGE_TYPE_BYTES,         ///< Result is in bytes
+    GPA_USAGE_TYPE_ITEMS,         ///< Result is a count of items or objects (ie, vertices, triangles, threads, pixels, texels, etc)
+    GPA_USAGE_TYPE_KILOBYTES,     ///< Result is in kilobytes
+    GPA_USAGE_TYPE__LAST          ///< Marker indicating last element
 } GPA_Usage_Type;
 
 /// Logging type definitions
 typedef enum
 {
-   GPA_LOGGING_NONE = 0,
-   GPA_LOGGING_ERROR = 1,
-   GPA_LOGGING_MESSAGE = 2,
-   GPA_LOGGING_ERROR_AND_MESSAGE = 3,
-   GPA_LOGGING_TRACE = 4,
-   GPA_LOGGING_ERROR_AND_TRACE = 5,
-   GPA_LOGGING_MESSAGE_AND_TRACE = 6,
-   GPA_LOGGING_ERROR_MESSAGE_AND_TRACE = 7,
-   GPA_LOGGING_ALL = 0xFF
+    GPA_LOGGING_NONE = 0,
+    GPA_LOGGING_ERROR = 1,
+    GPA_LOGGING_MESSAGE = 2,
+    GPA_LOGGING_ERROR_AND_MESSAGE = 3,
+    GPA_LOGGING_TRACE = 4,
+    GPA_LOGGING_ERROR_AND_TRACE = 5,
+    GPA_LOGGING_MESSAGE_AND_TRACE = 6,
+    GPA_LOGGING_ERROR_MESSAGE_AND_TRACE = 7,
+    GPA_LOGGING_ALL = 0xFF
 } GPA_Logging_Type;
 
 #endif // _GPUPERFAPI_TYPES_H_

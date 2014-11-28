@@ -154,7 +154,6 @@ struct PerformanceLibrary::Impl
 
 #elif AMD_PERF_API_WINDOWS
 		switch (api) {
-		case ProfileApi::Direct3D10: lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
 		case ProfileApi::Direct3D11: lib_ = LoadLibraryA ("GPUPerfAPIDX11-x64.dll"); break;
 		case ProfileApi::OpenGL:	 lib_ = LoadLibraryA ("GPUPerfAPIGL-x64.dll"); break;
 		case ProfileApi::OpenCL:	 lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;

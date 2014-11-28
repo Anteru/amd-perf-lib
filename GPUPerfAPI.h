@@ -13,15 +13,15 @@
 #define _GPUPERFAPI_H_
 
 #ifndef GPALIB_DECL
-   #ifdef _WIN32
-      #ifdef __cplusplus
-         #define GPALIB_DECL extern "C" __declspec( dllimport )
-      #else
-         #define GPALIB_DECL __declspec( dllimport )
-      #endif
-   #else //_LINUX
-      #define GPALIB_DECL extern
-   #endif
+#ifdef _WIN32
+#ifdef __cplusplus
+#define GPALIB_DECL extern "C" __declspec( dllimport )
+#else
+#define GPALIB_DECL __declspec( dllimport )
+#endif
+#else //_LINUX
+#define GPALIB_DECL extern
+#endif
 #endif
 
 #include <assert.h>
@@ -36,9 +36,9 @@
 /// at the end of the message.
 /// \param loggingType Identifies the type of messages to receive callbacks for.
 /// \param callbackFuncPtr Pointer to the callback function
-/// \return GPA_STATUS_OK, unless the callbackFuncPtr is NULL and the loggingType is not 
+/// \return GPA_STATUS_OK, unless the callbackFuncPtr is NULL and the loggingType is not
 /// GPA_LOGGING_NONE, in which case GPA_STATUS_ERROR_NULL_POINTER is returned.
-GPALIB_DECL GPA_Status GPA_RegisterLoggingCallback( GPA_Logging_Type loggingType, GPA_LoggingCallbackPtrType callbackFuncPtr );
+GPALIB_DECL GPA_Status GPA_RegisterLoggingCallback(GPA_Logging_Type loggingType, GPA_LoggingCallbackPtrType callbackFuncPtr);
 
 // Init / destroy GPA
 
@@ -46,13 +46,13 @@ GPALIB_DECL GPA_Status GPA_RegisterLoggingCallback( GPA_Logging_Type loggingType
 ///
 /// This function must be called before the rendering context or device is created.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_Initialize( );
+GPALIB_DECL GPA_Status GPA_Initialize();
 
 /// \brief Undo any initialization to ensure proper behavior in applications that are not being profiled.
 ///
 /// This function must be called after the rendering context or device is released / destroyed.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_Destroy( );
+GPALIB_DECL GPA_Status GPA_Destroy();
 
 // Context Startup / Finish
 
@@ -61,7 +61,7 @@ GPALIB_DECL GPA_Status GPA_Destroy( );
 /// This function must be called before any other GPA functions.
 /// \param context The context to open counters for. Typically a device pointer. Refer to GPA API specific documentation for further details.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_OpenContext( void* context );
+GPALIB_DECL GPA_Status GPA_OpenContext(void* context);
 
 /// \brief Closes the counters in the currently active context.
 ///
@@ -75,7 +75,7 @@ GPALIB_DECL GPA_Status GPA_CloseContext();
 /// If the call is successful, all GPA functions will act on the currently selected context.
 /// \param context The context to select. The same value that was passed to GPA_OpenContext.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_SelectContext( void* context );
+GPALIB_DECL GPA_Status GPA_SelectContext(void* context);
 
 
 // Counter Interrogation
@@ -84,35 +84,35 @@ GPALIB_DECL GPA_Status GPA_SelectContext( void* context );
 ///
 /// \param count The value which will hold the count upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetNumCounters( gpa_uint32* count );
+GPALIB_DECL GPA_Status GPA_GetNumCounters(gpa_uint32* count);
 
 /// \brief Get the name of a specific counter.
 ///
 /// \param index The index of the counter name to query. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \param name The value which will hold the name upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetCounterName( gpa_uint32 index, const char** name );
+GPALIB_DECL GPA_Status GPA_GetCounterName(gpa_uint32 index, const char** name);
 
 /// \brief Get description of the specified counter.
 ///
 /// \param index The index of the counter to query. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \param description The value which will hold the description upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetCounterDescription( gpa_uint32 index, const char** description );
+GPALIB_DECL GPA_Status GPA_GetCounterDescription(gpa_uint32 index, const char** description);
 
 /// \brief Get the counter data type of the specified counter.
 ///
 /// \param index The index of the counter. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \param counterDataType The value which will hold the description upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetCounterDataType( gpa_uint32 index, GPA_Type* counterDataType );
+GPALIB_DECL GPA_Status GPA_GetCounterDataType(gpa_uint32 index, GPA_Type* counterDataType);
 
 /// \brief Get the counter usage type of the specified counter.
 ///
 /// \param index The index of the counter. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \param counterUsageType The value which will hold the description upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetCounterUsageType( gpa_uint32 index, GPA_Usage_Type* counterUsageType );
+GPALIB_DECL GPA_Status GPA_GetCounterUsageType(gpa_uint32 index, GPA_Usage_Type* counterUsageType);
 
 /// \brief Get a string with the name of the specified counter data type.
 ///
@@ -121,7 +121,7 @@ GPALIB_DECL GPA_Status GPA_GetCounterUsageType( gpa_uint32 index, GPA_Usage_Type
 /// \param counterDataType The type to get the string for.
 /// \param typeStr The value that will be set to contain a reference to the name of the counter data type.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetDataTypeAsStr( GPA_Type counterDataType, const char** typeStr );
+GPALIB_DECL GPA_Status GPA_GetDataTypeAsStr(GPA_Type counterDataType, const char** typeStr);
 
 /// \brief Get a string with the name of the specified counter usage type.
 ///
@@ -130,7 +130,7 @@ GPALIB_DECL GPA_Status GPA_GetDataTypeAsStr( GPA_Type counterDataType, const cha
 /// \param counterUsageType The type to get the string for.
 /// \param usageTypeStr The value that will be set to contain a reference to the name of the counter usage type.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetUsageTypeAsStr( GPA_Usage_Type counterUsageType, const char** usageTypeStr );
+GPALIB_DECL GPA_Status GPA_GetUsageTypeAsStr(GPA_Usage_Type counterUsageType, const char** usageTypeStr);
 
 /// \brief Enable a specified counter.
 ///
@@ -138,7 +138,7 @@ GPALIB_DECL GPA_Status GPA_GetUsageTypeAsStr( GPA_Usage_Type counterUsageType, c
 /// Initially all counters are disabled, and must explicitly be enabled by calling this function.
 /// \param index The index of the counter to enable. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_EnableCounter( gpa_uint32 index );
+GPALIB_DECL GPA_Status GPA_EnableCounter(gpa_uint32 index);
 
 
 /// \brief Disable a specified counter.
@@ -147,14 +147,14 @@ GPALIB_DECL GPA_Status GPA_EnableCounter( gpa_uint32 index );
 /// Initially all counters are disabled, and must explicitly be enabled.
 /// \param index The index of the counter to enable. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_DisableCounter( gpa_uint32 index );
+GPALIB_DECL GPA_Status GPA_DisableCounter(gpa_uint32 index);
 
 
 /// \brief Get the number of enabled counters.
 ///
 /// \param count The value that will be set to the number of counters that are currently enabled.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetEnabledCount( gpa_uint32* count );
+GPALIB_DECL GPA_Status GPA_GetEnabledCount(gpa_uint32* count);
 
 
 /// \brief Get the counter index for an enabled counter.
@@ -164,14 +164,14 @@ GPALIB_DECL GPA_Status GPA_GetEnabledCount( gpa_uint32* count );
 /// \param enabledNumber The number of the enabled counter to get the counter index for. Must lie between 0 and (GPA_GetEnabledIndex result - 1).
 /// \param enabledCounterIndex The value that will contain the index of the counter.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetEnabledIndex( gpa_uint32 enabledNumber, gpa_uint32* enabledCounterIndex );
+GPALIB_DECL GPA_Status GPA_GetEnabledIndex(gpa_uint32 enabledNumber, gpa_uint32* enabledCounterIndex);
 
 
 /// \brief Check that a counter is enabled.
 ///
 /// \param counterIndex The index of the counter. Must lie between 0 and (GPA_GetNumCounters result - 1).
 /// \return GPA_STATUS_OK is returned if the counter is enabled, GPA_STATUS_ERROR_NOT_FOUND otherwise.
-GPALIB_DECL GPA_Status GPA_IsCounterEnabled( gpa_uint32 counterIndex );
+GPALIB_DECL GPA_Status GPA_IsCounterEnabled(gpa_uint32 counterIndex);
 
 
 /// \brief Enable a specified counter using the counter name (case insensitive).
@@ -180,7 +180,7 @@ GPALIB_DECL GPA_Status GPA_IsCounterEnabled( gpa_uint32 counterIndex );
 /// Initially all counters are disabled, and must explicitly be enabled by calling this function.
 /// \param counter The name of the counter to enable.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_EnableCounterStr( const char* counter );
+GPALIB_DECL GPA_Status GPA_EnableCounterStr(const char* counter);
 
 
 /// \brief Disable a specified counter using the counter name (case insensitive).
@@ -189,7 +189,7 @@ GPALIB_DECL GPA_Status GPA_EnableCounterStr( const char* counter );
 /// Initially all counters are disabled, and must explicitly be enabled.
 /// \param counter The name of the counter to disable.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_DisableCounterStr( const char* counter );
+GPALIB_DECL GPA_Status GPA_DisableCounterStr(const char* counter);
 
 
 /// \brief Enable all counters.
@@ -213,7 +213,7 @@ GPALIB_DECL GPA_Status GPA_DisableAllCounters();
 /// \param counter The name of the counter to get the index for.
 /// \param index The index of the requested counter.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetCounterIndex( const char* counter, gpa_uint32* index );
+GPALIB_DECL GPA_Status GPA_GetCounterIndex(const char* counter, gpa_uint32* index);
 
 
 /// \brief Get the number of passes required for the currently enabled set of counters.
@@ -222,7 +222,7 @@ GPALIB_DECL GPA_Status GPA_GetCounterIndex( const char* counter, gpa_uint32* ind
 /// On each pass a different (compatible) set of counters will be measured.
 /// \param numPasses The value of the number of passes.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetPassCount( gpa_uint32* numPasses );
+GPALIB_DECL GPA_Status GPA_GetPassCount(gpa_uint32* numPasses);
 
 
 /// \brief Begin sampling with the currently enabled set of counters.
@@ -233,7 +233,7 @@ GPALIB_DECL GPA_Status GPA_GetPassCount( gpa_uint32* numPasses );
 /// The set of enabled counters cannot be changed inside a BeginSession/EndSession sequence.
 /// \param sessionID The value that will be set to the session identifier.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_BeginSession( gpa_uint32* sessionID );
+GPALIB_DECL GPA_Status GPA_BeginSession(gpa_uint32* sessionID);
 
 
 /// \brief End sampling with the currently enabled set of counters.
@@ -272,7 +272,7 @@ GPALIB_DECL GPA_Status GPA_EndPass();
 /// BeginSample must be followed by a call to EndSample before BeginSample is called again.
 /// \param sampleID Any integer, unique within the BeginSession/EndSession sequence, used to retrieve the sample results.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_BeginSample( gpa_uint32 sampleID );
+GPALIB_DECL GPA_Status GPA_BeginSample(gpa_uint32 sampleID);
 
 
 /// \brief End sampling using the enabled counters.
@@ -287,13 +287,13 @@ GPALIB_DECL GPA_Status GPA_EndSample();
 /// \param sessionID The session to get the number of samples for.
 /// \param samples The value that will be set to the number of samples contained within the session.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetSampleCount( gpa_uint32 sessionID, gpa_uint32* samples );
+GPALIB_DECL GPA_Status GPA_GetSampleCount(gpa_uint32 sessionID, gpa_uint32* samples);
 
 
 /// \brief Determine if an individual sample result is available.
 ///
 /// After a sampling session results may be available immediately or take a certain amount of time to become available.
-/// This function allows you to determine when a sample can be read. 
+/// This function allows you to determine when a sample can be read.
 /// The function does not block, permitting periodic polling.
 /// To block until a sample is ready use a GetSample* function instead of this.
 /// It can be more efficient to determine if a whole session's worth of data is available using GPA_IsSessionReady.
@@ -301,19 +301,19 @@ GPALIB_DECL GPA_Status GPA_GetSampleCount( gpa_uint32 sessionID, gpa_uint32* sam
 /// \param sessionID The session containing the sample to determine availability.
 /// \param sampleID The sample identifier of the sample to query availability for.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_IsSampleReady( bool* readyResult, gpa_uint32 sessionID, gpa_uint32 sampleID );
+GPALIB_DECL GPA_Status GPA_IsSampleReady(bool* readyResult, gpa_uint32 sessionID, gpa_uint32 sampleID);
 
 
 /// \brief Determine if all samples within a session are available.
 ///
 /// After a sampling session results may be available immediately or take a certain amount of time to become available.
-/// This function allows you to determine when the results of a session can be read. 
+/// This function allows you to determine when the results of a session can be read.
 /// The function does not block, permitting periodic polling.
 /// To block until a sample is ready use a GetSample* function instead of this.
 /// \param readyResult The value that will contain the result of the session being ready. True if ready.
 /// \param sessionID The session to determine availability for.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_IsSessionReady( bool* readyResult, gpa_uint32 sessionID );
+GPALIB_DECL GPA_Status GPA_IsSessionReady(bool* readyResult, gpa_uint32 sessionID);
 
 
 /// \brief Get a sample of type 64-bit unsigned integer.
@@ -325,7 +325,7 @@ GPALIB_DECL GPA_Status GPA_IsSessionReady( bool* readyResult, gpa_uint32 session
 /// \param counterID The counter index to get the result for.
 /// \param result The value which will contain the counter result upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetSampleUInt64( gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterID, gpa_uint64* result );
+GPALIB_DECL GPA_Status GPA_GetSampleUInt64(gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterID, gpa_uint64* result);
 
 
 /// \brief Get a sample of type 32-bit unsigned integer.
@@ -337,7 +337,7 @@ GPALIB_DECL GPA_Status GPA_GetSampleUInt64( gpa_uint32 sessionID, gpa_uint32 sam
 /// \param counterIndex The counter index to get the result for.
 /// \param result The value which will contain the counter result upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetSampleUInt32( gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterIndex, gpa_uint32* result );
+GPALIB_DECL GPA_Status GPA_GetSampleUInt32(gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterIndex, gpa_uint32* result);
 
 
 /// \brief Get a sample of type 64-bit float.
@@ -349,7 +349,7 @@ GPALIB_DECL GPA_Status GPA_GetSampleUInt32( gpa_uint32 sessionID, gpa_uint32 sam
 /// \param counterIndex The counter index to get the result for.
 /// \param result The value which will contain the counter result upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetSampleFloat64( gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterIndex, gpa_float64* result );
+GPALIB_DECL GPA_Status GPA_GetSampleFloat64(gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterIndex, gpa_float64* result);
 
 
 /// \brief Get a sample of type 32-bit float.
@@ -361,7 +361,7 @@ GPALIB_DECL GPA_Status GPA_GetSampleFloat64( gpa_uint32 sessionID, gpa_uint32 sa
 /// \param counterIndex The counter index to get the result for.
 /// \param result The value which will contain the counter result upon successful execution.
 /// \return The GPA result status of the operation. GPA_STATUS_OK is returned if the operation is successful.
-GPALIB_DECL GPA_Status GPA_GetSampleFloat32( gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterIndex, gpa_float32* result );
+GPALIB_DECL GPA_Status GPA_GetSampleFloat32(gpa_uint32 sessionID, gpa_uint32 sampleID, gpa_uint32 counterIndex, gpa_float32* result);
 
 
 /// \brief Get a string translation of a GPA status value.
@@ -369,6 +369,6 @@ GPALIB_DECL GPA_Status GPA_GetSampleFloat32( gpa_uint32 sessionID, gpa_uint32 sa
 /// Provides a simple method to convert a status enum value into a string which can be used to display log messages.
 /// \param status The status to convert into a string.
 /// \return A string which describes the supplied status.
-GPALIB_DECL const char* GPA_GetStatusAsStr( GPA_Status status );
+GPALIB_DECL const char* GPA_GetStatusAsStr(GPA_Status status);
 
 #endif // _GPUPERFAPI_H_

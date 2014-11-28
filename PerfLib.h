@@ -38,7 +38,6 @@ struct ProfileApi
 {
 	enum Enum
 	{
-		Direct3D10,
 		Direct3D11,
 		OpenGL,
 		OpenCL
