@@ -1,8 +1,6 @@
 #ifndef NIV_AMD_PERF_LIB_PERFAPI_H_645363EE_8979_484F_8902_62C026502B0F
 #define NIV_AMD_PERF_LIB_PERFAPI_H_645363EE_8979_484F_8902_62C026502B0F
 
-#include <boost/noncopyable.hpp>
-#include <boost/variant.hpp>
 #include <string>
 #include <cstdint>
 #include <map>
@@ -47,12 +45,22 @@ struct ProfileApi
 	};
 };
 
-typedef std::map<std::string,
-	boost::variant<
-		float, double,
-		std::uint32_t, std::uint64_t,
-		std::int32_t, std::int64_t>
-	> SessionResult;
+struct ResultEntry
+{
+	union
+	{
+		float f32;
+		double f64;
+		std::uint32_t u32;
+		std::uint64_t u64;
+		std::int32_t i32;
+		std::int64_t i64;
+	};
+
+	DataType::Enum dataType;
+};
+
+typedef std::map<std::string, ResultEntry> SessionResult;
 
 struct Counter
 {
@@ -103,9 +111,13 @@ private:
 	std::map<std::string, Counter>	counters_;
 };
 
-class Sample : public boost::noncopyable
+class Sample
 {
 public:
+	// Noncopyable
+	Sample (const Sample& other) = delete;
+	Sample& operator= (const Sample& other) = delete;
+
 	Sample (Sample&& other);
 	Sample& operator= (Sample&& other);
 	
@@ -119,9 +131,13 @@ private:
 	bool					active_;
 };
 
-class Pass : public boost::noncopyable
+class Pass
 {
 public:
+	// Noncopyable
+	Pass (const Pass& other) = delete;
+	Pass& operator= (const Pass& other) = delete;
+
 	Pass (Pass&& other);
 	Pass& operator= (Pass&& other);
 	
@@ -138,9 +154,13 @@ private:
 	bool					active_;
 };
 
-class Session : public boost::noncopyable
+class Session
 {
 public:
+	// Noncopyable
+	Session (const Session& other) = delete;
+	Session& operator= (const Session& other) = delete;
+	
 	Session (Session&& other);
 	Session& operator=(Session&& other);
 	
@@ -160,9 +180,13 @@ private:
 	bool					active_;
 };
 
-class Context : public boost::noncopyable
+class Context
 {
 public:
+	// Noncopyable
+	Context (const Context& other) = delete;
+	Context& operator= (const Context& other) = delete;
+
 	Context (Internal::ImportTable* imports, void* ctx);
 	Context ();
 	~Context ();
@@ -182,9 +206,13 @@ private:
 	void*					context_;
 };
 
-class PerformanceLibrary : public boost::noncopyable
+class PerformanceLibrary
 {
 public:
+	// Noncopyable
+	PerformanceLibrary (const PerformanceLibrary& other) = delete;
+	PerformanceLibrary& operator= (const PerformanceLibrary& other) = delete;
+
 	PerformanceLibrary (const ProfileApi::Enum targetApi);
 	~PerformanceLibrary ();
 

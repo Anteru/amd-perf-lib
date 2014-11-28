@@ -491,53 +491,63 @@ SessionResult Session::GetResult (const bool block) const
 		GPA_Type type;
 		NIV_SAFE_GPA (imports_->getCounterDataType (index, &type));
 
+		ResultEntry resultEntry;
+
 		switch (type) {
 			case GPA_TYPE_INT32:
 			{
 				gpa_uint32 value;
 				NIV_SAFE_GPA (imports_->getSampleUInt32 (id_, 0, index, &value));
-				result [name] = static_cast<std::int32_t> (value);
+				resultEntry.i32 = static_cast<std::int32_t> (value);
+				resultEntry.dataType = DataType::int32;
 				break;
 			}
 			case GPA_TYPE_INT64:
 			{
 				gpa_uint64 value;
 				NIV_SAFE_GPA (imports_->getSampleUInt64 (id_, 0, index, &value));
-				result [name] = static_cast<std::int32_t> (value);
+				resultEntry.i64 = static_cast<std::int64_t> (value);
+				resultEntry.dataType = DataType::int64;
 				break;
 			}
 			case GPA_TYPE_UINT32:
 			{
 				gpa_uint32 value;
 				NIV_SAFE_GPA (imports_->getSampleUInt32 (id_, 0, index, &value));
-				result [name] = value;
+				resultEntry.u32 = value;
+				resultEntry.dataType = DataType::uint32;
 				break;
 			}
 			case GPA_TYPE_UINT64:
 			{
 				gpa_uint64 value;
 				NIV_SAFE_GPA (imports_->getSampleUInt64 (id_, 0, index, &value));
-				result [name] = value;
+				resultEntry.u64 = value;
+				resultEntry.dataType = DataType::uint64;
 				break;
 			}
 			case GPA_TYPE_FLOAT32:
 			{
 				gpa_float32 value;
 				NIV_SAFE_GPA (imports_->getSampleFloat32 (id_, 0, index, &value));
-				result [name] = value;
+				resultEntry.f32 = value;
+				resultEntry.dataType = DataType::float32;
 				break;
 			}
 			case GPA_TYPE_FLOAT64:
 			{
 				gpa_float64 value;
 				NIV_SAFE_GPA (imports_->getSampleFloat64 (id_, 0, index, &value));
-				result [name] = value;
+				resultEntry.f64 = value;
+				resultEntry.dataType = DataType::float64;
 				break;
 			}
 
 			default:
 				throw std::runtime_error ("Unsupported data type.");
 		}
+
+		result.emplace (name, resultEntry);
 	}
 
 	return result;
