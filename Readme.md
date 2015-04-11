@@ -20,9 +20,9 @@ It has been tested on Windows 7, with a HD 7970; on Windows 8.1 with a R9 290X a
 Notes
 -----
 
-This project is developed as part of a bigger project; this repository contains only code drops from the main development repository. Don't be suprised if sometimes multiple changes are commited together!
+This project is developed as part of a bigger project; this repository contains only code drops from the main development repository. Don't be surprised if sometimes multiple changes are committed together!
 
 License
 -------
 
-This project is licensed under the 2-clause BSD. See ``COPYING`` for details.
+This project is licensed under the 2-clause BSD. See ``LICENSE.txt`` for details.
