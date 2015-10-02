@@ -148,15 +148,24 @@ struct PerformanceLibrary::Impl
 		switch (api) {
 		case ProfileApi::OpenCL: lib_ = dlopen ("libGPUPerfAPICL.so", RTLD_NOW); break;
 		case ProfileApi::OpenGL: lib_ = dlopen ("libGPUPerfAPIGL.so", RTLD_NOW); break;
+		case ProfileApi::OpenGLES: lib_ = dlopen ("libGPUPerfAPIGLES.so", RTLD_NOW); break;
 		default:
 			throw std::runtime_error ("Unsupported API");
 		}
 
 #elif AMD_PERF_API_WINDOWS
 		switch (api) {
+#if AMD_PERF_API_X64
 		case ProfileApi::Direct3D11: lib_ = LoadLibraryA ("GPUPerfAPIDX11-x64.dll"); break;
 		case ProfileApi::OpenGL:	 lib_ = LoadLibraryA ("GPUPerfAPIGL-x64.dll"); break;
+		case ProfileApi::OpenGLES:	 lib_ = LoadLibraryA ("GPUPerfAPIGLES-x64.dll"); break;
 		case ProfileApi::OpenCL:	 lib_ = LoadLibraryA ("GPUPerfAPICL-x64.dll"); break;
+#elif AMD_PERF_API_X86
+		case ProfileApi::Direct3D11: lib_ = LoadLibraryA ("GPUPerfAPIDX11.dll"); break;
+		case ProfileApi::OpenGL:	 lib_ = LoadLibraryA ("GPUPerfAPIGL.dll"); break;
+		case ProfileApi::OpenGLES:	 lib_ = LoadLibraryA ("GPUPerfAPIGLES.dll"); break;
+		case ProfileApi::OpenCL:	 lib_ = LoadLibraryA ("GPUPerfAPICL.dll"); break;
+#endif
 		}
 #else
 	#error "Unsupported platform"
@@ -177,7 +186,8 @@ struct PerformanceLibrary::Impl
 
 	~Impl ()
 	{
-		NIV_SAFE_GPA (imports_.destroy ());
+		// Cannot use NIV_SAFE_GPA as it may throw, assume this succeeds
+		imports_.destroy ();
 
 #if AMD_PERF_API_LINUX
 		if (lib_ != nullptr) {
@@ -307,7 +317,8 @@ Sample::Sample (Internal::ImportTable* importTable, std::uint32_t id)
 Sample::~Sample ()
 {
 	if (active_) {
-		NIV_SAFE_GPA (imports_->endSample ());
+		// Cannot use NIV_SAFE_GPA as it may throw, assume this succeeds
+		imports_->endSample ();
 	}
 }
 
@@ -349,7 +360,8 @@ Pass::Pass (Internal::ImportTable* importTable)
 Pass::~Pass ()
 {
 	if (active_) {
-		NIV_SAFE_GPA (imports_->endPass ());
+		// Cannot use NIV_SAFE_GPA as it may throw, assume this succeeds
+		imports_->endPass ();
 	}
 }
 
@@ -404,7 +416,8 @@ Session::Session (Internal::ImportTable* importTable)
 Session::~Session()
 {
 	if (active_) {
-		NIV_SAFE_GPA (imports_->endSession ());
+		// Cannot use NIV_SAFE_GPA as it may throw, assume this succeeds
+		imports_->endSession ();
 	}
 }
 

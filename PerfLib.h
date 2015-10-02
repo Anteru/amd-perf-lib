@@ -40,7 +40,8 @@ struct ProfileApi
 	{
 		Direct3D11,
 		OpenGL,
-		OpenCL
+		OpenCL,
+		OpenGLES
 	};
 };
 
